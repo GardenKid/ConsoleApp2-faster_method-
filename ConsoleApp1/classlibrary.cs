@@ -59,10 +59,6 @@ namespace ConsoleApp1
 
             //添加与点相连的腹杆
 
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
             #region 遍历frame对象，根据其IJ端点名称，将其添加到对应的点结构体list里面去
             // 获取所有杆件的名称
             int numberNames = 0;
