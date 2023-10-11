@@ -272,7 +272,7 @@ namespace ConsoleApplication1
             //寻找某个对象组的点的所有信息
             List<classlibrary.PointInfo> PointInfoList_1 = new List<classlibrary.PointInfo>();
 
-            classlibrary.GetPointInfo(mySapObject, "WJ-SX节点", ref PointInfoList_1);
+            classlibrary.GetPointInfo(mySapObject, "WJ-SX节点", ref PointInfoList_1, "WJ-SX", "Wj-XX");
 
             //完成弹窗
             Console.WriteLine("完成");
