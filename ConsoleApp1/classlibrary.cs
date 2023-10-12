@@ -12,6 +12,9 @@ namespace ConsoleApp1
 {
     internal class classlibrary
     {
+
+        // 依次输入 SapObject 节点对象组名称 节点结构体列表 弦杆对象组名称 腹杆对象组名称
+        // 输出 节点结构体列表
         public static void GetPointInfo(SAP2000v1.cOAPI SapObject, string GroupName, ref List<classlibrary.PointInfo> PointInfoList_1, string ChordGroupName, string WebGroupName)
         {
             cSapModel SapModel = null;
@@ -58,7 +61,7 @@ namespace ConsoleApp1
             classlibrary.PointListAddFrame(SapObject, ref PointInfoList_1, ChordGroupName, 0);
 
             //添加与点相连的腹杆
-            classlibrary.PointListAddFrame(SapObject, ref PointInfoList_1, WebGroupName, 0);
+            classlibrary.PointListAddFrame(SapObject, ref PointInfoList_1, WebGroupName, 1);
 
 
         }
@@ -153,6 +156,39 @@ namespace ConsoleApp1
 
                     #endregion
 
+                    #region 获取杆件截面信息
+                    // 获取截面名称
+                    string propName = "";
+                    string SAuto = "";
+                    ret = SapModel.FrameObj.GetSection(frameName, ref propName,ref SAuto);
+
+                    // 获取截面类型
+                    string NameInFile = null;
+                    string FileName = null;
+                    string MatProp = null;
+                    eFramePropType PropType = 0;
+                    ret = SapModel.PropFrame.GetNameInPropFile(propName, ref NameInFile, ref FileName, ref MatProp, ref PropType);
+
+                    // 根据截面类型和截面名称获取截面属性
+                    double t3 = 0;
+                    double tw = 0;
+                    int Color = 0;
+                    string Notes = null;
+                    string GUID = null;
+
+                    switch ((int)PropType)
+                    {
+                        case 7:
+                            {
+                                
+                                ret = SapModel.PropFrame.GetPipe(propName, ref FileName, ref MatProp, ref t3, ref tw, ref Color, ref Notes, ref GUID );
+                                break;
+                            }
+                        throw new Exception("软件截面库里没有定义改杆件的截面类型");
+                    }
+
+                    #endregion
+
 
                     //寻找point1对应的点结构体
                     temp_PointInfo = PointInfoList_1.Find(s => s.Name == point1);
@@ -183,11 +219,13 @@ namespace ConsoleApp1
                     temp_FrameInfo.JX = X;
                     temp_FrameInfo.JY = Y;
                     temp_FrameInfo.JZ = Z;
-                    temp_FrameInfo.P_max = temp_P.Max();
-                    temp_FrameInfo.P_min = temp_P.Min();
                     temp_FrameInfo.P_Cal = (temp_P[2] + temp_P[1]) / 2;
                     temp_FrameInfo.ComboName = temp_ComboName[0];
                     temp_FrameInfo.MaxRatio = temp_Ratio[0];
+                    temp_FrameInfo.PropType = PropType;
+                    temp_FrameInfo.t3 = t3;
+                    temp_FrameInfo.tw = tw;
+                    temp_FrameInfo.propName = propName;
 
                     // 将杆件结构体加入到对应的点结构体内部的结构体列表中
                     // 分两步，先加入到临时列表中，再将临时列表赋予对应点结构体内部的列表
@@ -262,6 +300,39 @@ namespace ConsoleApp1
 
                     #endregion
 
+                    #region 获取杆件截面信息
+                    // 获取截面名称
+                    string propName = "";
+                    string SAuto = "";
+                    ret = SapModel.FrameObj.GetSection(frameName, ref propName, ref SAuto);
+
+                    // 获取截面类型
+                    string NameInFile = null;
+                    string FileName = null;
+                    string MatProp = null;
+                    eFramePropType PropType = 0;
+                    ret = SapModel.PropFrame.GetNameInPropFile(propName, ref NameInFile, ref FileName, ref MatProp, ref PropType);
+
+                    // 根据截面类型和截面名称获取截面属性
+                    double t3 = 0;
+                    double tw = 0;
+                    int Color = 0;
+                    string Notes = null;
+                    string GUID = null;
+
+                    switch ((int)PropType)
+                    {
+                        case 7:
+                            {
+
+                                ret = SapModel.PropFrame.GetPipe(propName, ref FileName, ref MatProp, ref t3, ref tw, ref Color, ref Notes, ref GUID);
+                                break;
+                            }
+                            throw new Exception("软件截面库里没有定义改杆件的截面类型");
+                    }
+
+                    #endregion
+
 
                     //寻找point2对应的点结构体
                     temp_PointInfo = PointInfoList_1.Find(s => s.Name == point2);
@@ -291,11 +362,14 @@ namespace ConsoleApp1
                     temp_FrameInfo.JX = X;
                     temp_FrameInfo.JY = Y;
                     temp_FrameInfo.JZ = Z;
-                    temp_FrameInfo.P_max = temp_P.Max();
-                    temp_FrameInfo.P_min = temp_P.Min();
                     temp_FrameInfo.P_Cal = (temp_P[4] + temp_P[5]) / 2;
                     temp_FrameInfo.ComboName = temp_ComboName[0];
                     temp_FrameInfo.MaxRatio = temp_Ratio[0];
+                    temp_FrameInfo.PropType = PropType;
+                    temp_FrameInfo.t3 = t3;
+                    temp_FrameInfo.tw = tw;
+                    temp_FrameInfo.propName = propName;
+
 
                     // 将杆件结构体加入到对应的点结构体内部的结构体列表中
                     // 分两步，先加入到临时列表中，再将临时列表赋予对应点结构体内部的列表
@@ -321,6 +395,14 @@ namespace ConsoleApp1
         }
 
 
+        //定义方法，根据节点信息(其他信息)计算得到该选用的空心球产品（归并之前）
+        public static string SolderBallSelect(List<FrameInfo> ChordInfoList, List<FrameInfo> WebInfoList, double X,double Y,double Z)
+        {
+
+        }
+
+
+        // 定义点结构体，成员包括点名称，与之相连的弦杆结构体列表、腹杆结构体列表。
         public struct PointInfo
         {
             public string Name;
@@ -329,7 +411,13 @@ namespace ConsoleApp1
             public double pointZ;
             public List<FrameInfo> ChordInfoList;
             public List<FrameInfo> WebInfoList;
+            public string SolderBallTypeName;
+            public bool ContainStiffener;
         }
+
+        //定义杆件结构体，成员包括，框架名称，端点名称，端点坐标（默认I点为焊接球所在点）
+        //设计组合，设计组合对应的内力，其中P是多个测站轴力列表，P_Cal是用来计算的内力，设计最大应力比
+        //截面几何尺寸信息，截面类型，截面名称。
         public struct FrameInfo
         {
             public string FrameName;
@@ -337,11 +425,13 @@ namespace ConsoleApp1
             public string JName;
             public double IX, IY, IZ;
             public double JX, JY, JZ;
-            public double P_max, V2, V3, T, M2, M3;
-            public double P_min;
+            public double P, V2, V3, T, M2, M3;
             public double P_Cal;
             public string ComboName;
             public double MaxRatio;
+            public double t3, tw;
+            public eFramePropType PropType;
+            public string propName;
         }
     }
 }
