@@ -12,6 +12,18 @@ namespace ConsoleApp1
 {
     internal class classlibrary
     {
+        //初始化焊接球产品字典,不加劲和加劲分别为1.2
+        Dictionary<int, SolderBallProuct> SolderBallProductMenu_1 = new Dictionary<int, SolderBallProuct>();
+        Dictionary<int, SolderBallProuct> SolderBallProductMenu_2 = new Dictionary<int, SolderBallProuct>();
+
+        //读取配置文件到焊接球产品字典中去的方法
+        public static void SolderBallProductMenu_Construct(string FilePath, ref Dictionary<int, SolderBallProuct> SolderBallProductMenu)
+        {
+            
+            SolderBallProductMenu
+
+        }
+
 
         // 依次输入 SapObject 节点对象组名称 节点结构体列表 弦杆对象组名称 腹杆对象组名称
         // 输出 节点结构体列表
@@ -395,10 +407,10 @@ namespace ConsoleApp1
         }
 
 
-        //定义方法，根据节点信息(其他信息)计算得到该选用的空心球产品（归并之前）
-        public static string SolderBallSelect(List<FrameInfo> ChordInfoList, List<FrameInfo> WebInfoList, double X,double Y,double Z)
+        //定义方法，根据节点信息和焊接球产品字典计算得到该选用的空心球产品（归并之前），返回到焊接球结构体列表
+        public static string SolderBallSelect(Dictionary<int,SolderBallProuct> SolderBallProductMenu, ref List<classlibrary.PointInfo> PointInfoList_1)
         {
-
+            
         }
 
 
@@ -411,9 +423,25 @@ namespace ConsoleApp1
             public double pointZ;
             public List<FrameInfo> ChordInfoList;
             public List<FrameInfo> WebInfoList;
-            public string SolderBallTypeName;
+            public string SolderBallProductName;
+            public int SolderBallProductNumber;
             public bool ContainStiffener;
         }
+
+
+
+        //定义产品球结构体，包括序号，产品标记名称，规格尺寸/mm，理论重量/kg
+        public struct SolderBallProuct
+        {
+            public int SolderBallProductNumber;
+            public string SolderBallProductName;
+            public string SolderBallSizeName;
+            public double Size_D, Size_d;
+            public double TheotyMass;
+        }
+
+
+
 
         //定义杆件结构体，成员包括，框架名称，端点名称，端点坐标（默认I点为焊接球所在点）
         //设计组合，设计组合对应的内力，其中P是多个测站轴力列表，P_Cal是用来计算的内力，设计最大应力比

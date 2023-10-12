@@ -164,11 +164,6 @@ namespace ConsoleApplication1
 
             ret = mySapModel.SetPresentUnits(eUnits.N_mm_C);
 
-            ////寻找某个对象组的点的所有信息（位置移到下面运行）
-            //List<classlibrary.PointInfo> PointInfoList_1 = new List<classlibrary.PointInfo>();
-
-            //classlibrary.GetPointInfo(mySapObject, "WJ-SX节点", ref PointInfoList_1);
-
             // 判断设计结果是否可用，如果不可用就运行分析与设计
             if (mySapModel.DesignSteel.GetResultsAvailable()==false)
             {
