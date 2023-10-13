@@ -174,6 +174,13 @@ namespace ConsoleApplication1
                 ret = mySapModel.DesignSteel.StartDesign();
             }
 
+            //实例化classlibrary类
+            classlibrary ClassLibrary = new classlibrary();
+            ClassLibrary.SolderBallProductMenu_Construct();
+            //打印字典
+            Console.WriteLine(ClassLibrary.SolderBallProductMenu_1);
+            Console.WriteLine(ClassLibrary.SolderBallProductMenu_2);
+
             // 读取轴力信息
             //寻找某个对象组的点的所有信息 先创建一个用于存储信息的点结构体列表
             List<classlibrary.PointInfo> PointInfoList_1 = new List<classlibrary.PointInfo>();
@@ -182,6 +189,10 @@ namespace ConsoleApplication1
             // 依次输入 SapObject 节点对象组名称 节点结构体列表 弦杆对象组名称 腹杆对象组名称
             // 输出 节点结构体列表
             classlibrary.GetPointInfo(mySapObject, "WJ-SX节点", ref PointInfoList_1, "WJ-SX", "Wj-FG");
+
+            //进行计算
+            classlibrary.SolderBallSelect(ClassLibrary.SolderBallProductMenu_1, ref PointInfoList_1);
+
 
             //完成弹窗
             Console.WriteLine("完成");

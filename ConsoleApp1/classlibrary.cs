@@ -1,6 +1,7 @@
 ﻿using SAP2000v1;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.AccessControl;
@@ -13,20 +14,73 @@ namespace ConsoleApp1
     internal class classlibrary
     {
         //初始化焊接球产品字典,不加劲和加劲分别为1.2
-        Dictionary<int, SolderBallProuct> SolderBallProductMenu_1 = new Dictionary<int, SolderBallProuct>();
-        Dictionary<int, SolderBallProuct> SolderBallProductMenu_2 = new Dictionary<int, SolderBallProuct>();
+        public Dictionary<int, SolderBallProuct> SolderBallProductMenu_1 = new Dictionary<int, SolderBallProuct>();
+        public Dictionary<int, SolderBallProuct> SolderBallProductMenu_2 = new Dictionary<int, SolderBallProuct>();
 
-        //读取配置文件到焊接球产品字典中去的方法
-        public static void SolderBallProductMenu_Construct(string FilePath, ref Dictionary<int, SolderBallProuct> SolderBallProductMenu)
+        //初始化钢材
+        public Dictionary<double, double> StellFDic = new Dictionary<double, double>()
+        {
+            { 355, 295 },
+            { 390, 330 },
+            { 420, 355 },
+            { 460, 390 },
+            { 235, 205 },
+            { 34500, 325 }
+        };
+
+
+        //将配置文件中的信息写入到产品字典中去
+        public void SolderBallProductMenu_Construct()
         {
             
-            SolderBallProductMenu
-
+            string FilePath_1 = "E:\\虚拟项目\\节点cad二次开发\\sap2k二次开发\\ConsoleApp2(faster_method)\\Config\\不加肋焊接空心球产晶标记和主要规格.txt";
+            string FilePath_2 = "E:\\虚拟项目\\节点cad二次开发\\sap2k二次开发\\ConsoleApp2(faster_method)\\Config\\加肋焊接空心球产晶标记和主要规格.txt";
+            MenuConstruct_Method(FilePath_1, ref SolderBallProductMenu_1);
+            MenuConstruct_Method(FilePath_2, ref SolderBallProductMenu_2);
         }
+
+
+        //读取配置文件到焊接球产品字典中去的方法
+        public static void MenuConstruct_Method(string FilePath, ref Dictionary<int, SolderBallProuct> SolderBallProductMenu)
+        {
+
+            // 读取配置文件
+            string[] Lines = File.ReadAllLines(FilePath, Encoding.GetEncoding("gb2312"));
+            //去掉文件第一行
+            Lines = Lines.Skip(1).ToArray();
+
+            //实例化一个临时的产品结构体
+            SolderBallProuct temp_SolderBallProuct = new SolderBallProuct();
+
+            int temp_SolderBallProductNumber = 0;
+            // 处理每一行的配置项
+            foreach (string Line in Lines)
+            {
+                temp_SolderBallProductNumber++;
+
+                // 解析配置项
+                string[] LineParts = Line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                temp_SolderBallProuct.SolderBallProductNumber = int.Parse(LineParts[0]);
+                temp_SolderBallProuct.SolderBallSizeName = LineParts[1];
+                temp_SolderBallProuct.SolderBallSizeName = LineParts[2];
+                temp_SolderBallProuct.TheotyMass = double.Parse(LineParts[3]);
+
+                //对产品尺寸信息string进行进一步的拆分
+                LineParts = LineParts[2].Split(new char[] { 'D', '×' }, StringSplitOptions.RemoveEmptyEntries);
+                temp_SolderBallProuct.Size_D = double.Parse(LineParts[0]);
+                temp_SolderBallProuct.Size_d = double.Parse(LineParts[1]);
+
+                SolderBallProductMenu.Add(temp_SolderBallProductNumber, temp_SolderBallProuct);
+            }
+                        
+        }
+
+
 
 
         // 依次输入 SapObject 节点对象组名称 节点结构体列表 弦杆对象组名称 腹杆对象组名称
         // 输出 节点结构体列表
+        // 这个方法调用了下面自定义的方法 PointListAddFrame
         public static void GetPointInfo(SAP2000v1.cOAPI SapObject, string GroupName, ref List<classlibrary.PointInfo> PointInfoList_1, string ChordGroupName, string WebGroupName)
         {
             cSapModel SapModel = null;
@@ -408,9 +462,74 @@ namespace ConsoleApp1
 
 
         //定义方法，根据节点信息和焊接球产品字典计算得到该选用的空心球产品（归并之前），返回到焊接球结构体列表
-        public static string SolderBallSelect(Dictionary<int,SolderBallProuct> SolderBallProductMenu, ref List<classlibrary.PointInfo> PointInfoList_1)
+        public static void SolderBallSelect(Dictionary<int, SolderBallProuct> SolderBallProductMenu, ref List<classlibrary.PointInfo> PointInfoList_1)
         {
-            
+            foreach(classlibrary.PointInfo PointInfo_i in PointInfoList_1)
+            {
+                //读取节点信息
+                double x = PointInfo_i.pointX;
+                double y = PointInfo_i.pointY;
+                double z = PointInfo_i.pointZ;
+
+                
+                //读取弦杆腹杆list
+                List<FrameInfo> temp_WebInfoList = PointInfo_i.WebInfoList;
+                List<FrameInfo> temp_ChordInfoList = PointInfo_i.ChordInfoList;
+
+                //定义一个与计算节点相连的所有杆件list
+                List<FrameInfo> temp_FrameInfoList = new List<FrameInfo>();
+                // 使用AddRange方法将list1和list2合并到temp_WebInfoList中
+                temp_FrameInfoList.AddRange(temp_WebInfoList);
+                temp_FrameInfoList.AddRange(temp_ChordInfoList);
+
+
+                //定义double数组，用于存放各种计算产生的变量
+                List<double> temp_FrameThitaList = new List<double>();
+                List<double> temp_FrameDList = new List<double>();
+
+                //用下面for的语句来循环，优于直接foreach，因为可以记录循环步的步数
+                for (int i = 0; i < temp_FrameInfoList.Count; i++)
+                {
+                    //根据杆件i的端点坐标求杆件向量
+                    double xi = temp_FrameInfoList[i].JX - x;
+                    double yi = temp_FrameInfoList[i].JY - y;
+                    double zi = temp_FrameInfoList[i].JZ - z;
+
+                    //其他信息
+                    double di = temp_FrameInfoList[i].t3;
+
+                    for (int j = 0; j < temp_FrameInfoList.Count; j++)
+                    {
+                        //根据杆件i的端点坐标求杆件向量
+                        double xj = temp_FrameInfoList[j].JX - x;
+                        double yj = temp_FrameInfoList[j].JY - y;
+                        double zj = temp_FrameInfoList[j].JZ - z;
+
+                        //其他信息
+                        double dj = temp_FrameInfoList[i].t3;
+
+                        double temp_Thita = Math.Acos((xi * xj + yi * yj + zi * zj) / (Math.Sqrt(xi * xi + yi * yi + zi * zi) * Math.Sqrt(xj * xj + yj * yj + zj * zj)));
+                        //这里temp_Thita需要限定小数点位数，不然会产生接近于0的极小值，在下面的判断中无法识别为0。
+                        temp_Thita = Math.Round(temp_Thita);
+                        temp_FrameThitaList.Add(temp_Thita);
+
+                        if (temp_Thita != 0) { 
+                            double temp_D = (di + 2 * 10 + dj) / temp_Thita;
+                            temp_D = Math.Round(temp_D, 2);
+                            temp_FrameDList.Add(temp_D);
+                        }
+
+
+                    }
+
+                }
+
+                //初步得到空心球直径
+                double temp_PointD = temp_FrameDList.Max();
+                double temp_PointTb = Math.Max(4, temp_PointD/45);
+
+                Console.WriteLine("complete");
+            }
         }
 
 
