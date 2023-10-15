@@ -190,8 +190,11 @@ namespace ConsoleApplication1
             // 输出 节点结构体列表
             classlibrary.GetPointInfo(mySapObject, "WJ-SX节点", ref PointInfoList_1, "WJ-SX", "Wj-FG");
 
+            //此处定义了节点球的材料，将来要给用户选择的。
+            string SolderBallMat = "Q355";
+
             //进行计算
-            classlibrary.SolderBallSelect(ClassLibrary.SolderBallProductMenu_1, ref PointInfoList_1);
+            classlibrary.SolderBallSelect(ClassLibrary.SolderBallProductMenu_1, ref PointInfoList_1, SolderBallMat);
 
 
             //完成弹窗

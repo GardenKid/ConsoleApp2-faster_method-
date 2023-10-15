@@ -18,14 +18,14 @@ namespace ConsoleApp1
         public Dictionary<int, SolderBallProuct> SolderBallProductMenu_2 = new Dictionary<int, SolderBallProuct>();
 
         //初始化钢材
-        public Dictionary<double, double> StellFDic = new Dictionary<double, double>()
+        public Dictionary<string, double> StellFDic = new Dictionary<string, double>()
         {
-            { 355, 295 },
-            { 390, 330 },
-            { 420, 355 },
-            { 460, 390 },
-            { 235, 205 },
-            { 34500, 325 }
+            { "Q355", 295 },
+            { "Q390", 330 },
+            { "Q420", 355 },
+            { "Q460", 390 },
+            { "Q235", 205 },
+            { "Q345GJ", 325 }
         };
 
 
@@ -462,19 +462,36 @@ namespace ConsoleApp1
 
 
         //定义方法，根据节点信息和焊接球产品字典计算得到该选用的空心球产品（归并之前），返回到焊接球结构体列表
-        public static void SolderBallSelect(Dictionary<int, SolderBallProuct> SolderBallProductMenu, ref List<classlibrary.PointInfo> PointInfoList_1)
+        public static void SolderBallSelect(Dictionary<int, SolderBallProuct> SolderBallProductMenu, ref List<classlibrary.PointInfo> PointInfoList_1, string SolderBallMat)
         {
-            foreach(classlibrary.PointInfo PointInfo_i in PointInfoList_1)
+            Dictionary<string, double> StellFDic_1 = new Dictionary<string, double>()
             {
+            { "Q355", 295 },
+            { "Q390", 330 },
+            { "Q420", 355 },
+            { "Q460", 390 },
+            { "Q235", 205 },
+            { "Q345GJ", 325 }
+            };
+
+
+            for (int ii = 0; ii < PointInfoList_1.Count; ii++) 
+            {
+                //实例化一个结构体
+                PointInfo PointInfo_ii = PointInfoList_1[ii];
+
+                //根据SolderBallMat获取焊接球的强度设计值
+                double temp_f = StellFDic_1[SolderBallMat];
+
                 //读取节点信息
-                double x = PointInfo_i.pointX;
-                double y = PointInfo_i.pointY;
-                double z = PointInfo_i.pointZ;
+                double x = PointInfo_ii.pointX;
+                double y = PointInfo_ii.pointY;
+                double z = PointInfo_ii.pointZ;
 
                 
                 //读取弦杆腹杆list
-                List<FrameInfo> temp_WebInfoList = PointInfo_i.WebInfoList;
-                List<FrameInfo> temp_ChordInfoList = PointInfo_i.ChordInfoList;
+                List<FrameInfo> temp_WebInfoList = PointInfo_ii.WebInfoList;
+                List<FrameInfo> temp_ChordInfoList = PointInfo_ii.ChordInfoList;
 
                 //定义一个与计算节点相连的所有杆件list
                 List<FrameInfo> temp_FrameInfoList = new List<FrameInfo>();
@@ -486,6 +503,15 @@ namespace ConsoleApp1
                 //定义double数组，用于存放各种计算产生的变量
                 List<double> temp_FrameThitaList = new List<double>();
                 List<double> temp_FrameDList = new List<double>();
+                List<double> temp_Frame_dList = new List<double>();
+                List<double> temp_Frame_tList = new List<double>();
+
+                //定义alpha1，alpha2
+                double alpha1 = 1;
+                double alpha2 = 1;
+                double alpha1_1 = 1;
+                double alpha2_1 = 1;
+                double eta0 = 1;
 
                 //用下面for的语句来循环，优于直接foreach，因为可以记录循环步的步数
                 for (int i = 0; i < temp_FrameInfoList.Count; i++)
@@ -498,6 +524,13 @@ namespace ConsoleApp1
                     //其他信息
                     double di = temp_FrameInfoList[i].t3;
 
+                    double ti = temp_FrameInfoList[i].tw;
+
+                    //储存di和ti到double数组里面去
+                    temp_Frame_dList.Add(di);
+                    temp_Frame_tList.Add(ti);
+
+
                     for (int j = 0; j < temp_FrameInfoList.Count; j++)
                     {
                         //根据杆件i的端点坐标求杆件向量
@@ -506,27 +539,68 @@ namespace ConsoleApp1
                         double zj = temp_FrameInfoList[j].JZ - z;
 
                         //其他信息
-                        double dj = temp_FrameInfoList[i].t3;
+                        double dj = temp_FrameInfoList[j].t3;
 
                         double temp_Thita = Math.Acos((xi * xj + yi * yj + zi * zj) / (Math.Sqrt(xi * xi + yi * yi + zi * zi) * Math.Sqrt(xj * xj + yj * yj + zj * zj)));
                         //这里temp_Thita需要限定小数点位数，不然会产生接近于0的极小值，在下面的判断中无法识别为0。
                         temp_Thita = Math.Round(temp_Thita);
                         temp_FrameThitaList.Add(temp_Thita);
 
-                        if (temp_Thita != 0) { 
+                        if (temp_Thita != 0) 
+                        { 
                             double temp_D = (di + 2 * 10 + dj) / temp_Thita;
                             temp_D = Math.Round(temp_D, 2);
                             temp_FrameDList.Add(temp_D);
                         }
 
-
                     }
 
                 }
 
+
                 //初步得到空心球直径
                 double temp_PointD = temp_FrameDList.Max();
                 double temp_PointTb = Math.Max(4, temp_PointD/45);
+                double temp_d = temp_Frame_dList.Max();
+                double temp_t = temp_Frame_tList.Max();
+
+
+                //判断，承载力是否满足
+
+                if (((temp_PointD / temp_d <= 3.0) && (temp_PointD / temp_d >= 2.4) && (temp_PointTb / temp_t <= 2.0) && (temp_PointTb / temp_t >= 1.5))!= true)
+                {
+                    if((temp_PointD / temp_d > 3.0)|| (temp_PointTb / temp_t > 2.0))
+                    {
+                        Console.WriteLine();
+                        PointInfo_ii.SolderBallProductName = "无法设计此节点，杆件不满足构造要求";
+                        PointInfo_ii.SolderBallProductNumber = 0;
+                        continue;
+                    }
+                    if ((temp_PointD / temp_d < 2.4) || (temp_PointTb / temp_t < 1.5))
+                    {
+                        temp_PointD = 2.4 * temp_d;
+                        temp_PointTb = 1.5 * temp_t;
+                    }
+                }
+
+                if(temp_PointD >= 300)
+                {
+                    alpha1 = 1.4;
+                    alpha2 = 1.1;
+                    PointInfo_ii.ContainStiffener = true;
+                }
+                else
+                {
+                    PointInfo_ii.ContainStiffener = false;
+                }
+
+                if(temp_PointD > 500)
+                {
+                    eta0 = 0.9;
+                }
+
+                double NR = eta0 * (0.29 + 0.54 * (temp_d / temp_PointD)) * Math.PI * temp_PointTb * temp_d * temp_f;
+
 
                 Console.WriteLine("complete");
             }
@@ -545,6 +619,7 @@ namespace ConsoleApp1
             public string SolderBallProductName;
             public int SolderBallProductNumber;
             public bool ContainStiffener;
+            public int StellType;
         }
 
 
