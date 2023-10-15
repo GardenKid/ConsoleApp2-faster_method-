@@ -14,8 +14,8 @@ namespace ConsoleApp1
     internal class classlibrary
     {
         //初始化焊接球产品字典,不加劲和加劲分别为1.2
-        public Dictionary<int, SolderBallProuct> SolderBallProductMenu_1 = new Dictionary<int, SolderBallProuct>();
-        public Dictionary<int, SolderBallProuct> SolderBallProductMenu_2 = new Dictionary<int, SolderBallProuct>();
+        public Dictionary<int, SolderBallProduct> SolderBallProductMenu_1 = new Dictionary<int, SolderBallProduct>();
+        public Dictionary<int, SolderBallProduct> SolderBallProductMenu_2 = new Dictionary<int, SolderBallProduct>();
 
         //初始化钢材
         public Dictionary<string, double> StellFDic = new Dictionary<string, double>()
@@ -41,7 +41,7 @@ namespace ConsoleApp1
 
 
         //读取配置文件到焊接球产品字典中去的方法
-        public static void MenuConstruct_Method(string FilePath, ref Dictionary<int, SolderBallProuct> SolderBallProductMenu)
+        public static void MenuConstruct_Method(string FilePath, ref Dictionary<int, SolderBallProduct> SolderBallProductMenu)
         {
 
             // 读取配置文件
@@ -50,7 +50,7 @@ namespace ConsoleApp1
             Lines = Lines.Skip(1).ToArray();
 
             //实例化一个临时的产品结构体
-            SolderBallProuct temp_SolderBallProuct = new SolderBallProuct();
+            SolderBallProduct temp_SolderBallProduct = new SolderBallProduct();
 
             int temp_SolderBallProductNumber = 0;
             // 处理每一行的配置项
@@ -60,17 +60,17 @@ namespace ConsoleApp1
 
                 // 解析配置项
                 string[] LineParts = Line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                temp_SolderBallProuct.SolderBallProductNumber = int.Parse(LineParts[0]);
-                temp_SolderBallProuct.SolderBallSizeName = LineParts[1];
-                temp_SolderBallProuct.SolderBallSizeName = LineParts[2];
-                temp_SolderBallProuct.TheotyMass = double.Parse(LineParts[3]);
+                temp_SolderBallProduct.SolderBallProductNumber = int.Parse(LineParts[0]);
+                temp_SolderBallProduct.SolderBallSizeName = LineParts[1];
+                temp_SolderBallProduct.SolderBallSizeName = LineParts[2];
+                temp_SolderBallProduct.TheotyMass = double.Parse(LineParts[3]);
 
                 //对产品尺寸信息string进行进一步的拆分
                 LineParts = LineParts[2].Split(new char[] { 'D', '×' }, StringSplitOptions.RemoveEmptyEntries);
-                temp_SolderBallProuct.Size_D = double.Parse(LineParts[0]);
-                temp_SolderBallProuct.Size_d = double.Parse(LineParts[1]);
+                temp_SolderBallProduct.Size_D = double.Parse(LineParts[0]);
+                temp_SolderBallProduct.Size_d = double.Parse(LineParts[1]);
 
-                SolderBallProductMenu.Add(temp_SolderBallProductNumber, temp_SolderBallProuct);
+                SolderBallProductMenu.Add(temp_SolderBallProductNumber, temp_SolderBallProduct);
             }
                         
         }
@@ -462,9 +462,18 @@ namespace ConsoleApp1
 
 
         //定义方法，根据节点信息和焊接球产品字典计算得到该选用的空心球产品（归并之前），返回到焊接球结构体列表
-        public static void SolderBallSelect(Dictionary<int, SolderBallProuct> SolderBallProductMenu, ref List<classlibrary.PointInfo> PointInfoList_1, string SolderBallMat)
+        public static void SolderBallSelect(Dictionary<int, SolderBallProduct> SolderBallProductMenu_1, Dictionary<int, SolderBallProduct> SolderBallProductMenu_2, ref List<classlibrary.PointInfo> PointInfoList_1, string SolderBallMat)
         {
-            Dictionary<string, double> StellFDic_1 = new Dictionary<string, double>()
+            Dictionary<string, double> StellFDic_16 = new Dictionary<string, double>()
+            {
+            { "Q355", 305 },
+            { "Q390", 345 },
+            { "Q420", 375 },
+            { "Q460", 410 },
+            { "Q235", 215 },
+            };
+
+            Dictionary<string, double> StellFDic_40 = new Dictionary<string, double>()
             {
             { "Q355", 295 },
             { "Q390", 330 },
@@ -474,14 +483,10 @@ namespace ConsoleApp1
             { "Q345GJ", 325 }
             };
 
-
             for (int ii = 0; ii < PointInfoList_1.Count; ii++) 
             {
                 //实例化一个结构体
-                PointInfo PointInfo_ii = PointInfoList_1[ii];
-
-                //根据SolderBallMat获取焊接球的强度设计值
-                double temp_f = StellFDic_1[SolderBallMat];
+                PointInfo PointInfo_ii = PointInfoList_1[ii];                
 
                 //读取节点信息
                 double x = PointInfo_ii.pointX;
@@ -510,6 +515,11 @@ namespace ConsoleApp1
                 double alpha1 = 1;
                 double alpha2 = 1;
                 double eta0 = 1;
+
+                //根据SolderBallMat获取焊接球的强度设计值,结合焊接球的板厚Td才能确定。
+                //初始化temp_f
+                double temp_f = 205;
+
 
                 //用下面for的语句来循环，优于直接foreach，因为可以记录循环步的步数
                 for (int i = 0; i < temp_FrameInfoList.Count; i++)
@@ -606,7 +616,7 @@ namespace ConsoleApp1
                             Console.WriteLine();
                             PointInfo_ii.SolderBallProductName = "杆件夹角太小或焊接球节点上杆件数量太多";
                             PointInfo_ii.SolderBallProductNumber = 0;
-                            continue;
+                            //continue;
                         }
                         if ((temp_PointD / temp_d < 2.4) || (temp_PointTb / temp_t < 1.5))
                         {
@@ -631,13 +641,13 @@ namespace ConsoleApp1
                         eta0 = 0.9;
                     }
 
+                    //根据SolderBallMat获取焊接球的强度设计值,结合焊接球的板厚Td才能确定。
+                    if (temp_PointTb <=16) { temp_f = StellFDic_16[SolderBallMat]; }
+                    else { temp_f = StellFDic_40[SolderBallMat]; }
+
                     NR = eta0 * (0.29 + 0.54 * (temp_d / temp_PointD)) * Math.PI * temp_PointTb * temp_d * temp_f;
 
-
-
-
-                    Console.WriteLine("complete");
-
+                    // 将计算D值和计算Tb值写入结构体中
                     PointInfo_ii.SolderD_Cal = temp_PointD;
                     PointInfo_ii.SolderTb_Cal = temp_PointTb;
 
@@ -645,11 +655,44 @@ namespace ConsoleApp1
 
                     temp_PointTb = temp_PointTb + 2;
                 }
-
                 #endregion
 
+                #region 初选产品
+
+                //初始化字典
+                Dictionary<int,SolderBallProduct> temp_Menu = new Dictionary<int,SolderBallProduct>();
+
+                //首先根据加劲与否选择对应的产品库，不加进是1，加劲是2.。
+                if(PointInfo_ii.ContainStiffener == true)
+                {
+                    temp_Menu =  SolderBallProductMenu_2;
+                }
+                else { temp_Menu = SolderBallProductMenu_1; }
 
 
+                //初始化字典中第一个Size大于计算结果的产品所在位置的Key值，temp_D_KeyNum,temp_Tb_KeyNum,temp_KeyNum
+                //注意，这里找到的位置是key值，也就是从1开始数的
+                int temp_D_KeyNum = 0;
+                int temp_Tb_KeyNum = 0;
+                int temp_KeyNum = 0;
+
+                foreach (KeyValuePair<int,SolderBallProduct> Kvp in temp_Menu)
+                {
+                    if (PointInfo_ii.SolderD_Cal <= Kvp.Value.Size_D) { temp_D_KeyNum = Kvp.Key; break; }
+                }
+                foreach (KeyValuePair<int, SolderBallProduct> Kvp in temp_Menu)
+                {
+                    if (PointInfo_ii.SolderTb_Cal <= Kvp.Value.Size_d) { temp_Tb_KeyNum = Kvp.Key; break; }
+                }
+                temp_KeyNum = Math.Max(temp_D_KeyNum, temp_Tb_KeyNum);
+
+                PointInfo_ii.SolderBallProductNumber = temp_KeyNum;
+                PointInfo_ii.SolderBallProductName = temp_Menu[temp_KeyNum].SolderBallProductName;
+                PointInfo_ii.SolderBallSizeName = temp_Menu[temp_KeyNum].SolderBallSizeName;
+                #endregion
+
+                //将修改后的PointInfo_ii返回给PointInfoList_1。完成修改
+                PointInfoList_1[ii] = PointInfo_ii;
             }
         }
 
@@ -663,7 +706,7 @@ namespace ConsoleApp1
             public double pointZ;
             public List<FrameInfo> ChordInfoList;
             public List<FrameInfo> WebInfoList;
-            public string SolderBallProductName;
+            public string SolderBallProductName,SolderBallSizeName;
             public int SolderBallProductNumber;
             public bool ContainStiffener;
             public int StellType;
@@ -673,7 +716,7 @@ namespace ConsoleApp1
 
 
         //定义产品球结构体，包括序号，产品标记名称，规格尺寸/mm，理论重量/kg
-        public struct SolderBallProuct
+        public struct SolderBallProduct
         {
             public int SolderBallProductNumber;
             public string SolderBallProductName;

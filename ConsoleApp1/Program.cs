@@ -194,7 +194,7 @@ namespace ConsoleApplication1
             string SolderBallMat = "Q355";
 
             //进行计算
-            classlibrary.SolderBallSelect(ClassLibrary.SolderBallProductMenu_1, ref PointInfoList_1, SolderBallMat);
+            classlibrary.SolderBallSelect(ClassLibrary.SolderBallProductMenu_1, ClassLibrary.SolderBallProductMenu_2, ref PointInfoList_1, SolderBallMat);
 
 
             //完成弹窗
