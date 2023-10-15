@@ -33,8 +33,8 @@ namespace ConsoleApp1
         public void SolderBallProductMenu_Construct()
         {
             
-            string FilePath_1 = "E:\\虚拟项目\\节点cad二次开发\\sap2k二次开发\\ConsoleApp2(faster_method)\\Config\\不加肋焊接空心球产晶标记和主要规格.txt";
-            string FilePath_2 = "E:\\虚拟项目\\节点cad二次开发\\sap2k二次开发\\ConsoleApp2(faster_method)\\Config\\加肋焊接空心球产晶标记和主要规格.txt";
+            string FilePath_1 = "Config\\不加肋焊接空心球产品标记和主要规格.txt";
+            string FilePath_2 = "Config\\加肋焊接空心球产品标记和主要规格.txt";
             MenuConstruct_Method(FilePath_1, ref SolderBallProductMenu_1);
             MenuConstruct_Method(FilePath_2, ref SolderBallProductMenu_2);
         }
@@ -506,11 +506,9 @@ namespace ConsoleApp1
                 List<double> temp_Frame_dList = new List<double>();
                 List<double> temp_Frame_tList = new List<double>();
 
-                //定义alpha1，alpha2
+                //定义alpha1，alpha2,弦杆的放大倍数，后面会根据情况修改
                 double alpha1 = 1;
                 double alpha2 = 1;
-                double alpha1_1 = 1;
-                double alpha2_1 = 1;
                 double eta0 = 1;
 
                 //用下面for的语句来循环，优于直接foreach，因为可以记录循环步的步数
@@ -563,46 +561,95 @@ namespace ConsoleApp1
                 double temp_PointTb = Math.Max(4, temp_PointD/45);
                 double temp_d = temp_Frame_dList.Max();
                 double temp_t = temp_Frame_tList.Max();
+                double NR = 0;//初始设置焊接球的承载力是零
 
+                //定义double，用于存储弦杆和腹杆的最大拉力和压力，如果拉力或者压力不存在，则记为零。
+                double temp_ChordPmax = 0;
+                double temp_ChordPmin = 0;
+                double temp_WebPmax = 0;
+                double temp_WebPmin = 0;
+                //定义弦杆最大值位置：弦杆拉力除以1.1和弦杆压力除以1.4，看哪个力大，则如果加劲，可知应该加劲对应到哪根弦杆。
+                int temp_StiffenerChordNum = 0;
+                string temp_StiffenerChordName = null;
 
-                //判断，承载力是否满足
+                //定义double[]，用于存储弦杆和腹杆的P_Cal列表。
+                double[] temp_ChordPCalList = temp_ChordInfoList.Select(s => s.P_Cal).ToArray();
+                double[] temp_WebPCalList = temp_WebInfoList.Select(s => s.P_Cal).ToArray();
 
-                if (((temp_PointD / temp_d <= 3.0) && (temp_PointD / temp_d >= 2.4) && (temp_PointTb / temp_t <= 2.0) && (temp_PointTb / temp_t >= 1.5))!= true)
+                if (temp_ChordPCalList.Max() > 0) { temp_ChordPmax = temp_ChordPCalList.Max(); };
+                if (temp_ChordPCalList.Min() < 0) { temp_ChordPmin = temp_ChordPCalList.Min(); };
+                if (temp_WebPCalList.Max() > 0) { temp_WebPmax = temp_WebPCalList.Max(); };
+                if (temp_WebPCalList.Min() < 0) { temp_WebPmin = temp_WebPCalList.Min(); };
+
+                if (Math.Abs(temp_ChordPmax / 1.1) > Math.Abs(temp_ChordPmin / 1.4))
                 {
-                    if((temp_PointD / temp_d > 3.0)|| (temp_PointTb / temp_t > 2.0))
-                    {
-                        Console.WriteLine();
-                        PointInfo_ii.SolderBallProductName = "无法设计此节点，杆件不满足构造要求";
-                        PointInfo_ii.SolderBallProductNumber = 0;
-                        continue;
-                    }
-                    if ((temp_PointD / temp_d < 2.4) || (temp_PointTb / temp_t < 1.5))
-                    {
-                        temp_PointD = 2.4 * temp_d;
-                        temp_PointTb = 1.5 * temp_t;
-                    }
-                }
-
-                if(temp_PointD >= 300)
-                {
-                    alpha1 = 1.4;
-                    alpha2 = 1.1;
-                    PointInfo_ii.ContainStiffener = true;
+                    temp_StiffenerChordNum = Array.IndexOf(temp_ChordPCalList, temp_ChordPmax);
                 }
                 else
                 {
-                    PointInfo_ii.ContainStiffener = false;
+                    temp_StiffenerChordNum = Array.IndexOf(temp_ChordPCalList, temp_ChordPmin);
                 }
+                temp_StiffenerChordName = temp_ChordInfoList[temp_StiffenerChordNum].FrameName;
 
-                if(temp_PointD > 500)
+
+                //判断，承载力是否满足
+                #region D 和 Tb 的计算值求取
+                while (NR <= Math.Max(Math.Max(temp_ChordPmax / alpha2, Math.Abs(temp_ChordPmin / alpha1)), Math.Max(temp_WebPmax, Math.Abs(temp_WebPmin))) )
                 {
-                    eta0 = 0.9;
+
+
+
+                    if (((temp_PointD / temp_d <= 3.0) && (temp_PointD / temp_d >= 2.4) && (temp_PointTb / temp_t <= 2.0) && (temp_PointTb / temp_t >= 1.5)) != true)
+                    {
+                        if ((temp_PointD / temp_d > 3.0) || (temp_PointTb / temp_t > 2.0))
+                        {
+                            Console.WriteLine();
+                            PointInfo_ii.SolderBallProductName = "杆件夹角太小或焊接球节点上杆件数量太多";
+                            PointInfo_ii.SolderBallProductNumber = 0;
+                            continue;
+                        }
+                        if ((temp_PointD / temp_d < 2.4) || (temp_PointTb / temp_t < 1.5))
+                        {
+                            temp_PointD = 2.4 * temp_d;
+                            temp_PointTb = 1.5 * temp_t;
+                        }
+                    }
+
+                    if (temp_PointD >= 300)
+                    {
+                        alpha1 = 1.4;
+                        alpha2 = 1.1;
+                        PointInfo_ii.ContainStiffener = true;
+                    }
+                    else
+                    {
+                        PointInfo_ii.ContainStiffener = false;
+                    }
+
+                    if (temp_PointD > 500)
+                    {
+                        eta0 = 0.9;
+                    }
+
+                    NR = eta0 * (0.29 + 0.54 * (temp_d / temp_PointD)) * Math.PI * temp_PointTb * temp_d * temp_f;
+
+
+
+
+                    Console.WriteLine("complete");
+
+                    PointInfo_ii.SolderD_Cal = temp_PointD;
+                    PointInfo_ii.SolderTb_Cal = temp_PointTb;
+
+                    //下一循环用
+
+                    temp_PointTb = temp_PointTb + 2;
                 }
 
-                double NR = eta0 * (0.29 + 0.54 * (temp_d / temp_PointD)) * Math.PI * temp_PointTb * temp_d * temp_f;
+                #endregion
 
 
-                Console.WriteLine("complete");
+
             }
         }
 
@@ -620,6 +667,7 @@ namespace ConsoleApp1
             public int SolderBallProductNumber;
             public bool ContainStiffener;
             public int StellType;
+            public double SolderD_Cal, SolderTb_Cal;
         }
 
 
