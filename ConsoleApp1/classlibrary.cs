@@ -61,7 +61,7 @@ namespace ConsoleApp1
                 // 解析配置项
                 string[] LineParts = Line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
                 temp_SolderBallProduct.SolderBallProductNumber = int.Parse(LineParts[0]);
-                temp_SolderBallProduct.SolderBallSizeName = LineParts[1];
+                temp_SolderBallProduct.SolderBallProductName = LineParts[1];
                 temp_SolderBallProduct.SolderBallSizeName = LineParts[2];
                 temp_SolderBallProduct.TheotyMass = double.Parse(LineParts[3]);
 
@@ -462,7 +462,7 @@ namespace ConsoleApp1
 
 
         //定义方法，根据节点信息和焊接球产品字典计算得到该选用的空心球产品（归并之前），返回到焊接球结构体列表
-        public static void SolderBallSelect(Dictionary<int, SolderBallProduct> SolderBallProductMenu_1, Dictionary<int, SolderBallProduct> SolderBallProductMenu_2, ref List<classlibrary.PointInfo> PointInfoList_1, string SolderBallMat)
+        public static void SolderBallSelect(Dictionary<int, SolderBallProduct> SolderBallProductMenu_1, Dictionary<int, SolderBallProduct> SolderBallProductMenu_2, ref List<PointInfo> PointInfoList_1, string SolderBallMat)
         {
             Dictionary<string, double> StellFDic_16 = new Dictionary<string, double>()
             {
@@ -482,6 +482,9 @@ namespace ConsoleApp1
             { "Q235", 205 },
             { "Q345GJ", 325 }
             };
+
+            //实例化两个产品字典，用于存储第一轮产品选择后的产品，供用户查看并筛选
+
 
             for (int ii = 0; ii < PointInfoList_1.Count; ii++) 
             {
@@ -551,7 +554,7 @@ namespace ConsoleApp1
 
                         double temp_Thita = Math.Acos((xi * xj + yi * yj + zi * zj) / (Math.Sqrt(xi * xi + yi * yi + zi * zi) * Math.Sqrt(xj * xj + yj * yj + zj * zj)));
                         //这里temp_Thita需要限定小数点位数，不然会产生接近于0的极小值，在下面的判断中无法识别为0。
-                        temp_Thita = Math.Round(temp_Thita);
+                        temp_Thita = Math.Round(temp_Thita,2);
                         temp_FrameThitaList.Add(temp_Thita);
 
                         if (temp_Thita != 0) 
@@ -614,18 +617,19 @@ namespace ConsoleApp1
                         if ((temp_PointD / temp_d > 3.0) || (temp_PointTb / temp_t > 2.0))
                         {
                             Console.WriteLine();
-                            PointInfo_ii.SolderBallProductName = "杆件夹角太小或焊接球节点上杆件数量太多";
-                            PointInfo_ii.SolderBallProductNumber = 0;
+                            PointInfo_ii.Warning = "杆件夹角太小或焊接球节点上杆件数量太多";
+                            PointInfo_ii.SolderBallProductNumber_1 = 100;
                             //continue;
                         }
-                        if ((temp_PointD / temp_d < 2.4) || (temp_PointTb / temp_t < 1.5))
+                        if (temp_PointD / temp_d < 2.4)
                         {
-                            temp_PointD = 2.4 * temp_d;
-                            temp_PointTb = 1.5 * temp_t;
+                            temp_PointD = 2.4 * temp_d;                            
                         }
+                        if (temp_PointTb / temp_t < 1.5) { temp_PointTb = 1.5 * temp_t; }
                     }
 
-                    if (temp_PointD >= 300)
+                    ////这里原本是大于等于300，为了避免 计算值290多，按不加进算的，结果取产品向上取成D=300，返回计算时又要变成按加劲计算，这样太混乱。
+                    if (temp_PointD > 300)
                     {
                         alpha1 = 1.4;
                         alpha2 = 1.1;
@@ -686,16 +690,26 @@ namespace ConsoleApp1
                 }
                 temp_KeyNum = Math.Max(temp_D_KeyNum, temp_Tb_KeyNum);
 
-                PointInfo_ii.SolderBallProductNumber = temp_KeyNum;
-                PointInfo_ii.SolderBallProductName = temp_Menu[temp_KeyNum].SolderBallProductName;
-                PointInfo_ii.SolderBallSizeName = temp_Menu[temp_KeyNum].SolderBallSizeName;
+                PointInfo_ii.SolderBallProductNumber_1 = temp_KeyNum;
+                PointInfo_ii.SolderSelected_1 = temp_Menu[temp_KeyNum];
+                //PointInfo_ii.SolderBallProductName_1 = temp_Menu[temp_KeyNum].SolderBallProductName;
+                //PointInfo_ii.SolderBallSizeName_1 = temp_Menu[temp_KeyNum].SolderBallSizeName;
                 #endregion
+
 
                 //将修改后的PointInfo_ii返回给PointInfoList_1。完成修改
                 PointInfoList_1[ii] = PointInfo_ii;
             }
         }
 
+        /// <summary>
+        /// 统计节点球内部所使用的产品信息。
+        /// </summary>
+        /// <param name="pointInfoList_1"></param>
+        //public static Dictionary<SolderBallProduct,int> SolderStatistic(List<PointInfo> pointInfoList_1)
+        //{
+
+        //}
 
         // 定义点结构体，成员包括点名称，与之相连的弦杆结构体列表、腹杆结构体列表。
         public struct PointInfo
@@ -706,10 +720,11 @@ namespace ConsoleApp1
             public double pointZ;
             public List<FrameInfo> ChordInfoList;
             public List<FrameInfo> WebInfoList;
-            public string SolderBallProductName,SolderBallSizeName;
-            public int SolderBallProductNumber;
+            //public string SolderBallProductName_1, SolderBallSizeName_1, SolderBallProductName_2, SolderBallSizeName_2;
+            public SolderBallProduct SolderSelected_1, SolderSelected_2;
+            public int SolderBallProductNumber_1, SolderBallProductNumber_2;
             public bool ContainStiffener;
-            public int StellType;
+            public string Warning;
             public double SolderD_Cal, SolderTb_Cal;
         }
 

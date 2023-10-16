@@ -193,7 +193,8 @@ namespace ConsoleApplication1
             //此处定义了节点球的材料，将来要给用户选择的。
             string SolderBallMat = "Q355";
 
-            //进行计算
+
+            //进行计算，从产品大库里面初步选取产品。
             classlibrary.SolderBallSelect(ClassLibrary.SolderBallProductMenu_1, ClassLibrary.SolderBallProductMenu_2, ref PointInfoList_1, SolderBallMat);
 
 
