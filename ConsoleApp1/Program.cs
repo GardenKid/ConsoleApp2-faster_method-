@@ -197,10 +197,15 @@ namespace ConsoleApplication1
             //进行计算，从产品大库里面初步选取产品。
             classlibrary.SolderBallSelect(ClassLibrary.SolderBallProductMenu_1, ClassLibrary.SolderBallProductMenu_2, ref PointInfoList_1, SolderBallMat);
 
+            //定义初次产品选择库，（初始化），每个产品型号出现了多少次
+            //1代表不加劲的产品选择库，2代表不加劲的产品选择库
+            Dictionary<SolderBallProduct,int> SolderResult_1= new Dictionary<SolderBallProduct, int>();
+            Dictionary<SolderBallProduct,int> SolderResult_2= new Dictionary<SolderBallProduct, int>();
+            // 统计初次选取的产品型号对应的数量。
+            classlibrary.SolderStatistic(PointInfoList_1, ref SolderResult_1, ref SolderResult_2);
 
             //完成弹窗
             Console.WriteLine("完成");
-            
 
             //close SAP2000
 

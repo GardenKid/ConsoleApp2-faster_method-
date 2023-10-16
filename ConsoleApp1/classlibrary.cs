@@ -706,10 +706,24 @@ namespace ConsoleApp1
         /// 统计节点球内部所使用的产品信息。
         /// </summary>
         /// <param name="pointInfoList_1"></param>
-        //public static Dictionary<SolderBallProduct,int> SolderStatistic(List<PointInfo> pointInfoList_1)
-        //{
+        public static void SolderStatistic(List<PointInfo> PointInfoList_1, ref Dictionary<SolderBallProduct, int> SolderResult_1, ref Dictionary<SolderBallProduct, int> SolderResult_2)
+        {
+            foreach (PointInfo pointInfo in PointInfoList_1)
+            {
+                if (pointInfo.ContainStiffener == false)
+                {
+                    if (SolderResult_1.ContainsKey(pointInfo.SolderSelected_1)) { SolderResult_1[pointInfo.SolderSelected_1] += 1; }
+                    else { SolderResult_1.Add(pointInfo.SolderSelected_1, 1); }
 
-        //}
+                    //如果字典里面已经存在这个产品了，则将其数量加一，如果没有，则创造对应的键值对
+                }
+                else
+                {
+                    if (SolderResult_2.ContainsKey(pointInfo.SolderSelected_1)) { SolderResult_2[pointInfo.SolderSelected_1] += 1; }
+                    else { SolderResult_2.Add(pointInfo.SolderSelected_1, 1); }
+                }
+            }
+        }
 
         // 定义点结构体，成员包括点名称，与之相连的弦杆结构体列表、腹杆结构体列表。
         public struct PointInfo
