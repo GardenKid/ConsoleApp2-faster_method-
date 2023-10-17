@@ -674,21 +674,15 @@ namespace ConsoleApp1
                 else { temp_Menu = SolderBallProductMenu_1; }
 
 
-                //初始化字典中第一个Size大于计算结果的产品所在位置的Key值，temp_D_KeyNum,temp_Tb_KeyNum,temp_KeyNum
+                //初始化字典中第一个Size大于计算结果的产品所在位置的Key值，(需要满足D和Tb同时满足）
                 //注意，这里找到的位置是key值，也就是从1开始数的
-                int temp_D_KeyNum = 0;
-                int temp_Tb_KeyNum = 0;
                 int temp_KeyNum = 0;
 
                 foreach (KeyValuePair<int,SolderBallProduct> Kvp in temp_Menu)
                 {
-                    if (PointInfo_ii.SolderD_Cal <= Kvp.Value.Size_D) { temp_D_KeyNum = Kvp.Key; break; }
+                    if ((PointInfo_ii.SolderD_Cal <= Kvp.Value.Size_D)&& (PointInfo_ii.SolderTb_Cal <= Kvp.Value.Size_d)) { temp_KeyNum = Kvp.Key; break; }
                 }
-                foreach (KeyValuePair<int, SolderBallProduct> Kvp in temp_Menu)
-                {
-                    if (PointInfo_ii.SolderTb_Cal <= Kvp.Value.Size_d) { temp_Tb_KeyNum = Kvp.Key; break; }
-                }
-                temp_KeyNum = Math.Max(temp_D_KeyNum, temp_Tb_KeyNum);
+
 
                 PointInfo_ii.SolderBallProductNumber_1 = temp_KeyNum;
                 PointInfo_ii.SolderSelected_1 = temp_Menu[temp_KeyNum];
