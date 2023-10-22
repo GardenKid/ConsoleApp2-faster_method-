@@ -160,8 +160,7 @@ namespace ConsoleApplication1
             }    
 
 
-            //switch to k-in units
-
+            //switch to N-mm units
             ret = mySapModel.SetPresentUnits(eUnits.N_mm_C);
 
             // 判断设计结果是否可用，如果不可用就运行分析与设计
